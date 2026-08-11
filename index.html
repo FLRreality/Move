@@ -1,0 +1,83 @@
+<html>
+<head>
+	<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <script src="pressure.js"></script>
+
+	<title>Pressure</title>
+</head>
+<body>
+	<div class="container-fluid">
+
+			<div class="display" id="on">On: 0</div>
+			<div class="display" id="off">Off: 0</div>
+
+			<div class="text-center">
+				<button class="btn btn-warning" id="press">Press</button>
+			</div>
+
+		<form class="form-group">
+			<label>
+				Ramp Interval:
+				<input name="rampInterval" type="number" value="5" step="1" />
+			</label>
+
+			<label>
+				Minutes:
+				<input name="minutes" type="number" value="5" step="1" />
+			</label>
+
+			<label>
+				Callback URL:
+				<input name="callBackUrl" type="text" />
+			</label>
+		</form>
+
+
+		<h2>Toys (Lovense Connect)</h2>
+		<div class="btn-group" id="toyList">
+			
+		</div>
+
+		<div class="container">
+			<p>
+				"Pressure" v0.5 (c) 2018 mayaloux.com
+			</p>
+			<a href="about.html">About</a>
+
+		</div>
+
+
+	</div>
+
+<style>
+
+.display {
+	min-width: 300px;
+	font-size: 5em;
+}
+
+#press {
+	width: 800px;
+	height: 800px;
+	
+	margin: auto;
+
+	border-radius: 100%;
+
+	font-size: 4em;
+}
+
+#off {
+	color: red;
+}
+
+</style>
+
+
+
+
+</body>
+</html>
