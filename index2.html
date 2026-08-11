@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1,
+               maximum-scale=1,
+               user-scalable=no,
+               viewport-fit=cover">
+
+<title>Contact Hold</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+        background: #111;
+        color: white;
+        touch-action: none;
+    }
+
+    body {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* -------------------------
+       TOP STATUS BAR
+       ------------------------- */
+
+    #statusBar {
+        background: #222;
+        padding: 12px;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        font-size: 18px;
+        flex-wrap: wrap;
+        gap: 10px;
+        z-index: 20;
+    }
+
+    .status {
+        min-width: 150px;
+        text-align: center;
+    }
+
+    #contactsStatus {
+        font-weight: bold;
+    }
+
+    /* -------------------------
+       MAIN TOUCH AREA
+       ------------------------- */
+
+    #touchArea {
+        position: relative;
+        flex: 1;
+        background: #292929;
+        overflow: hidden;
+        touch-action: none;
+    }
+
+    #touchArea.ready {
+        background: #163d20;
+    }
+
+    #touchArea.holding {
+        background: #143b58;
+    }
+
+    #touchArea.failed {
+        background: #4b1717;
+    }
+
+    /* -------------------------
+       BIG TIMER
+       ------------------------- */
+
+    #timer {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+
+        transform: translate(-50%, -50%);
+
+        font-size: clamp(70px, 15vw, 180px);
+        font-weight: bold;
+
+        text-align: center;
+
+        pointer-events: none;
+        z-index: 5;
+    }
+
+    #timerLabel {
+        font-size: clamp(18px, 3vw, 32px);
+        font-weight: normal;
+        opacity: .8;
+        margin-top: 5px;
+    }
+
+    /* -------------------------
+       CONTACT INDICATORS
+       ------------------------- */
+
+    .contactPoint {
+        position: absolute;
+
+        width: 90px;
+        height: 90px;
+
+        margin-left: -45px;
+        margin-top: -45px;
+
+        border-radius: 50%;
+
+        background: rgba(0, 180, 255, .85);
+
+        border: 4px solid white;
+
+        box-shadow:
+            0 0 20px rgba(0, 180, 255, .8);
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        font-size: 12px;
+        text-align: center;
+
+        pointer-events: none;
+
+        z-index: 10;
+    }
+
+    /* -------------------------
+       BOTTOM PANEL
+       ------------------------- */
+
+    #controls {
+        background: #181818;
+        padding: 12px;
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        gap: 10px;
+
+        flex-wrap: wrap;
+
+        z-index: 20;
+    }
+
+    button,
+    input,
+    select {
+        font-size: 18px;
+        padding: 10px 14px;
+        border-radius: 6px;
+        border: none;
+    }
+
+    button {
+        cursor: pointer;
+    }
+
+    #settingsButton {
+        background: #777;
+        color: white;
+    }
+
+    #startButton {
+        background: #2e8b57;
+        color: white;
+    }
+
+    #stopButton {
+        background: #b33;
+        color: white;
+    }
+
+    /* -------------------------
+       SETTINGS
+       ------------------------- */
+
+    #settings {
+        display: none;
+
+        position: fixed;
+
+        left: 50%;
+        top: 50%;
+
+        transform: translate(-50%, -50%);
+
+        width: min(90vw, 500px);
+        max-height: 90vh;
+
+        overflow-y: auto;
+
+        background: #222;
+
+        padding: 25px;
+
+        border-radius: 12px;
+
+        box-shadow: 0 0 40px black;
+
+        z-index: 100;
+    }
+
+    #settings h2 {
+        margin-top: 0;
+    }
+
+    .settingRow {
+        margin-bottom: 15px;
+    }
+
+    .settingRow label {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .settingRow input {
+        width: 100%;
+    }
+
+    #contactNames {
+        margin-top: 15px;
+    }
+
+    .contactName {
+        display: flex;
+        gap: 5px;
+        margin-bottom: 7px;
+    }
+
+    .contactName input {
+        flex: 1;
+    }
+
+    #closeSettings {
+        background: #555;
+        color: white;
+        width: 100%;
+        margin-top: 15px;
+    }
+
+    /* -------------------------
+       OVERLAY
+       ------------------------- */
+
+    #startOverlay {
+        position: fixed;
+
+        inset: 0;
+
+        background: rgba(0,0,0,.85);
+
+        z-index: 200;
+
+        display: flex;
+
+        justify-content: center;
+        align-items: center;
+
+        text-align: center;
+    }
+
+    #startOverlayContent {
+        max-width: 500px;
+        padding: 30px;
+    }
+
+    #startOverlay h1 {
+        font-size: 42px;
+    }
+
+    #startOverlay button {
+        font-size: 28px;
+        padding: 20px 50px;
+        background: #2e8b57;
+        color: white;
+    }
+
+    /* -------------------------
+       SMALL SCREENS
+       ------------------------- */
+
+    @media (max-width: 600px) {
+
+        #statusBar {
+            font-size: 14px;
+        }
+
+        .status {
+            min-width: 100px;
+        }
+
+        #controls {
+            padding: 8px;
+        }
+
+        button {
+            font-size: 16px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<!-- =========================
+     STATUS
+     ========================== -->
+
+<div id="statusBar">
+
+    <div class="status">
+        Required:
+        <strong id="requiredDisplay">1</strong>
+    </div>
+
+    <div class="status">
+        Current:
+        <strong id="currentDisplay">0</strong>
+    </div>
+
+    <div class="status">
+        Resets:
+        <strong id="resetDisplay">0</strong>
+    </div>
+
+    <div class="status">
+        Held:
+        <strong id="heldDisplay">0:00</strong>
+    </div>
+
+</div>
+
+
+<!-- =========================
+     TOUCH AREA
+     ========================== -->
+
+<div id="touchArea">
+
+    <div id="timer">
+        60
+        <div id="timerLabel">
+            WAITING
+        </div>
+    </div>
+
+</div>
+
+
+<!-- =========================
+     CONTROLS
+     ========================== -->
+
+<div id="controls">
+
+    <button id="settingsButton">
+        Settings
+    </button>
+
+    <button id="startButton">
+        Start
+    </button>
+
+    <button id="stopButton">
+        Stop
+    </button>
+
+</div>
+
+
+<!-- =========================
+     SETTINGS
+     ========================== -->
+
+<div id="settings">
+
+    <h2>Contact Hold Settings</h2>
+
+    <div class="settingRow">
+
+        <label>
+            Required contact points
+        </label>
+
+        <input
+            id="requiredContacts"
+            type="number"
+            min="1"
+            max="11"
+            value="1">
+
+    </div>
+
+
+    <div class="settingRow">
+
+        <label>
+            Hold duration (seconds)
+        </label>
+
+        <input
+            id="holdDuration"
+            type="number"
+            min="1"
+            max="86400"
+            value="60">
+
+    </div>
+
+
+    <div class="settingRow">
+
+        <label>
+            Contact labels
+        </label>
+
+        <div id="contactNames"></div>
+
+    </div>
+
+
+    <div class="settingRow">
+
+        <label>
+            Callback URL (optional)
+        </label>
+
+        <input
+            id="callbackUrl"
+            type="text"
+            placeholder="https://example.com/status">
+
+    </div>
+
+
+    <button id="closeSettings">
+        Save & Close
+    </button>
+
+</div>
+
+
+<!-- =========================
+     START OVERLAY
+     ========================== -->
+
+<div id="startOverlay">
+
+    <div id="startOverlayContent">
+
+        <h1>Contact Hold</h1>
+
+        <p>
+            Place all required contact points on the screen.
+        </p>
+
+        <p>
+            If any contact leaves the screen,
+            the timer will reset.
+        </p>
+
+        <button id="enterButton">
+            ENTER
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* ============================================================
+   CONFIGURATION
+   ============================================================ */
+
+let requiredContacts = 1;
+
+let holdDuration = 60;
+
+let contactLabels = [];
+
+let callbackUrl = "";
+
+
+/* ============================================================
+   STATE
+   ============================================================ */
+
+let activePointers = new Map();
+
+let running = false;
+
+let completed = false;
+
+let holdStart = null;
+
+let totalHeldSeconds = 0;
+
+let resetCount = 0;
+
+let lastSecond = null;
+
+
+/* ============================================================
+   DOM
+   ============================================================ */
+
+const touchArea =
+    document.getElementById("touchArea");
+
+const timer =
+    document.getElementById("timer");
+
+const timerLabel =
+    document.getElementById("timerLabel");
+
+const currentDisplay =
+    document.getElementById("currentDisplay");
+
+const requiredDisplay =
+    document.getElementById("requiredDisplay");
+
+const resetDisplay =
+    document.getElementById("resetDisplay");
+
+const heldDisplay =
+    document.getElementById("heldDisplay");
+
+
+/* ============================================================
+   SETTINGS
+   ============================================================ */
+
+function loadSettings() {
+
+    requiredContacts =
+        parseInt(
+            document.getElementById(
+                "requiredContacts"
+            ).value
+        );
+
+    holdDuration =
+        parseInt(
+            document.getElementById(
+                "holdDuration"
+            ).value
+        );
+
+    callbackUrl =
+        document.getElementById(
+            "callbackUrl"
+        ).value.trim();
+
+    requiredContacts =
+        Math.max(
+            1,
+            Math.min(
+                11,
+                requiredContacts
+            )
+        );
+
+    holdDuration =
+        Math.max(
+            1,
+            holdDuration
+        );
+
+    buildContactNames();
+
+    updateStatus();
+    resetTimer();
+}
+
+
+/* ============================================================
+   CONTACT LABELS
+   ============================================================ */
+
+function buildContactNames() {
+
+    const container =
+        document.getElementById(
+            "contactNames"
+        );
+
+    container.innerHTML = "";
+
+    const defaults = [
+        "Nose",
+        "Left Thumb",
+        "Left Index",
+        "Left Middle",
+        "Left Ring",
+        "Left Little",
+        "Right Thumb",
+        "Right Index",
+        "Right Middle",
+        "Right Ring",
+        "Right Little"
+    ];
+
+    for (
+        let i = 0;
+        i < requiredContacts;
+        i++
+    ) {
+
+        const row =
+            document.createElement("div");
+
+        row.className =
+            "contactName";
+
+        const input =
+            document.createElement("input");
+
+        input.type = "text";
+
+        input.value =
+            contactLabels[i] ||
+            defaults[i] ||
+            `Contact ${i + 1}`;
+
+        row.appendChild(input);
+
+        container.appendChild(row);
+    }
+}
+
+
+function readContactLabels() {
+
+    contactLabels = [];
+
+    document
+        .querySelectorAll(
+            "#contactNames input"
+        )
+        .forEach(input => {
+
+            contactLabels.push(
+                input.value ||
+                "Contact"
+            );
+
+        });
+}
+
+
+/* ============================================================
+   POINTER DOWN
+   ============================================================ */
+
+touchArea.addEventListener(
+    "pointerdown",
+    function(e) {
+
+        if (!running) {
+            return;
+        }
+
+        e.preventDefault();
+
+        /*
+         * Store every physical pointer separately.
+         *
+         * This is what allows multi-touch:
+         *
+         * pointer 1 = nose
+         * pointer 2 = finger
+         * pointer 3 = finger
+         * etc.
+         */
+
+        activePointers.set(
+            e.pointerId,
+            {
+                x: e.clientX,
+                y: e.clientY
+            }
+        );
+
+        createContactMarker(
+            e.pointerId,
+            e.clientX,
+            e.clientY
+        );
+
+        updateContacts();
+
+    },
+    {
+        passive: false
+    }
+);
+
+
+/* ============================================================
+   POINTER MOVE
+   ============================================================ */
+
+touchArea.addEventListener(
+    "pointermove",
+    function(e) {
+
+        if (!activePointers.has(
+            e.pointerId
+        )) {
+            return;
+        }
+
+        e.preventDefault();
+
+        activePointers.set(
+            e.pointerId,
+            {
+                x: e.clientX,
+                y: e.clientY
+            }
+        );
+
+        updateContactMarker(
+            e.pointerId,
+            e.clientX,
+            e.clientY
+        );
+
+    },
+    {
+        passive: false
+    }
+);
+
+
+/* ============================================================
+   POINTER UP
+   ============================================================ */
+
+function pointerReleased(e) {
+
+    if (!activePointers.has(
+        e.pointerId
+    )) {
+        return;
+    }
+
+    e.preventDefault();
+
+    activePointers.delete(
+        e.pointerId
+    );
+
+    removeContactMarker(
+        e.pointerId
+    );
+
+    updateContacts();
+
+}
+
+touchArea.addEventListener(
+    "pointerup",
+    pointerReleased,
+    { passive: false }
+);
+
+touchArea.addEventListener(
+    "pointercancel",
+    pointerReleased,
+    { passive: false }
+);
+
+touchArea.addEventListener(
+    "pointerout",
+    function(e) {
+
+        /*
+         * Do not reset simply because the
+         * pointer moves outside the element.
+         *
+         * pointerup / pointercancel is what
+         * actually determines whether contact
+         * ended.
+         */
+
+    }
+);
+
+
+/* ============================================================
+   CONTACT MARKERS
+   ============================================================ */
+
+function createContactMarker(
+    id,
+    x,
+    y
+) {
+
+    const marker =
+        document.createElement("div");
+
+    marker.className =
+        "contactPoint";
+
+    marker.id =
+        "pointer-" + id;
+
+    marker.innerText =
+        "CONTACT";
+
+    positionMarker(
+        marker,
+        x,
+        y
+    );
+
+    touchArea.appendChild(
+        marker
+    );
+
+}
+
+
+function updateContactMarker(
+    id,
+    x,
+    y
+) {
+
+    const marker =
+        document.getElementById(
+            "pointer-" + id
+        );
+
+    if (!marker) {
+        return;
+    }
+
+    positionMarker(
+        marker,
+        x,
+        y
+    );
+
+}
+
+
+function positionMarker(
+    marker,
+    x,
+    y
+) {
+
+    const rect =
+        touchArea.getBoundingClientRect();
+
+    marker.style.left =
+        (x - rect.left) + "px";
+
+    marker.style.top =
+        (y - rect.top) + "px";
+
+}
+
+
+function removeContactMarker(id) {
+
+    const marker =
+        document.getElementById(
+            "pointer-" + id
+        );
+
+    if (marker) {
+        marker.remove();
+    }
+
+}
+
+
+/* ============================================================
+   CONTACT COUNT
+   ============================================================ */
+
+function updateContacts() {
+
+    const count =
+        activePointers.size;
+
+    currentDisplay.textContent =
+        count;
+
+    requiredDisplay.textContent =
+        requiredContacts;
+
+    /*
+     * EXACT number required.
+     *
+     * If there are too few:
+     *   timer waits/resets.
+     *
+     * If there are enough:
+     *   hold can continue.
+     */
+
+    if (
+        count >= requiredContacts
+    ) {
+
+        touchArea.classList.add(
+            "ready"
+        );
+
+        if (
+            running &&
+            !holdStart &&
+            !completed
+        ) {
+
+            startHoldTimer();
+
+        }
+
+    } else {
+
+        touchArea.classList.remove(
+            "ready"
+        );
+
+        /*
+         * Critical rule:
+         *
+         * ANY contact leaving the screen
+         * resets the timer.
+         */
+
+        if (
+            running &&
+            holdStart &&
+            !completed
+        ) {
+
+            resetCount++;
+
+            resetDisplay.textContent =
+                resetCount;
+
+            resetTimer();
+
+        }
+
+    }
+
+}
+
+
+/* ============================================================
+   TIMER
+   ============================================================ */
+
+function startHoldTimer() {
+
+    holdStart =
+        performance.now();
+
+    touchArea.classList.add(
+        "holding"
+    );
+
+    timerLabel.textContent =
+        "HOLD";
+
+}
+
+
+function resetTimer() {
+
+    holdStart = null;
+
+    timer.textContent =
+        formatSeconds(
+            holdDuration
+        );
+
+    timerLabel.textContent =
+        "WAITING";
+
+    touchArea.classList.remove(
+        "holding"
+    );
+
+}
+
+
+function updateTimer() {
+
+    if (
+        !running ||
+        completed
+    ) {
+        return;
+    }
+
+    /*
+     * Not enough contacts.
+     */
+
+    if (
+        activePointers.size <
+        requiredContacts
+    ) {
+
+        resetTimer();
+
+        return;
+
+    }
+
+    if (!holdStart) {
+
+        startHoldTimer();
+
+        return;
+
+    }
+
+    const elapsed =
+        (
+            performance.now() -
+            holdStart
+        ) / 1000;
+
+    const remaining =
+        Math.max(
+            0,
+            holdDuration -
+            elapsed
+        );
+
+    timer.textContent =
+        formatSeconds(
+            Math.ceil(
+                remaining
+            )
+        );
+
+    if (
+        remaining <= 0
+    ) {
+
+        completeHold();
+
+    }
+
+}
+
+
+/* ============================================================
+   COMPLETION
+   ============================================================ */
+
+function completeHold() {
+
+    completed = true;
+
+    running = false;
+
+    totalHeldSeconds +=
+        holdDuration;
+
+    timer.textContent =
+        "✓";
+
+    timerLabel.textContent =
+        "COMPLETE";
+
+    touchArea.classList.remove(
+        "holding"
+    );
+
+    touchArea.classList.add(
+        "ready"
+    );
+
+    sendCallback(
+        "complete"
+    );
+
+}
+
+
+/* ============================================================
+   START
+   ============================================================ */
+
+function startSession() {
+
+    readContactLabels();
+
+    running = true;
+
+    completed = false;
+
+    holdStart = null;
+
+    resetCount = 0;
+
+    totalHeldSeconds = 0;
+
+    activePointers.clear();
+
+    resetDisplay.textContent =
+        "0";
+
+    heldDisplay.textContent =
+        "0:00";
+
+    resetTimer();
+
+    sendCallback(
+        "started"
+    );
+
+}
+
+
+/* ============================================================
+   STOP
+   ============================================================ */
+
+function stopSession() {
+
+    running = false;
+
+    completed = false;
+
+    holdStart = null;
+
+    activePointers.clear();
+
+    document
+        .querySelectorAll(
+            ".contactPoint"
+        )
+        .forEach(
+            e => e.remove()
+        );
+
+    timerLabel.textContent =
+        "STOPPED";
+
+    touchArea.classList.remove(
+        "holding",
+        "ready"
+    );
+
+    sendCallback(
+        "stopped"
+    );
+
+}
+
+
+/* ============================================================
+   CALLBACK
+   ============================================================ */
+
+function sendCallback(event) {
+
+    if (!callbackUrl) {
+        return;
+    }
+
+    const data = {
+
+        event: event,
+
+        running: running,
+
+        completed: completed,
+
+        requiredContacts:
+            requiredContacts,
+
+        currentContacts:
+            activePointers.size,
+
+        holdDuration:
+            holdDuration,
+
+        resetCount:
+            resetCount,
+
+        timestamp:
+            new Date().toISOString()
+
+    };
+
+    fetch(
+        callbackUrl,
+        {
+            method: "POST",
+
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
+
+            body:
+                JSON.stringify(data)
+        }
+    )
+    .catch(
+        error =>
+            console.error(
+                "Callback error:",
+                error
+            )
+    );
+
+}
+
+
+/* ============================================================
+   FORMAT TIME
+   ============================================================ */
+
+function formatSeconds(seconds) {
+
+    seconds =
+        Math.max(
+            0,
+            Math.floor(seconds)
+        );
+
+    const minutes =
+        Math.floor(
+            seconds / 60
+        );
+
+    const secs =
+        seconds % 60;
+
+    return (
+        minutes +
+        ":" +
+        String(secs).padStart(
+            2,
+            "0"
+        )
+    );
+
+}
+
+
+/* ============================================================
+   STATUS
+   ============================================================ */
+
+function updateStatus() {
+
+    requiredDisplay.textContent =
+        requiredContacts;
+
+    currentDisplay.textContent =
+        activePointers.size;
+
+    resetDisplay.textContent =
+        resetCount;
+
+}
+
+
+/* ============================================================
+   MAIN CLOCK
+   ============================================================ */
+
+setInterval(
+    function() {
+
+        updateTimer();
+
+        if (
+            holdStart &&
+            activePointers.size >=
+            requiredContacts
+        ) {
+
+            const elapsed =
+                (
+                    performance.now() -
+                    holdStart
+                ) / 1000;
+
+            heldDisplay.textContent =
+                formatSeconds(
+                    Math.floor(
+                        elapsed
+                    )
+                );
+
+        }
+
+    },
+    50
+);
+
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+document
+    .getElementById(
+        "settingsButton"
+    )
+    .addEventListener(
+        "click",
+        function() {
+
+            document
+                .getElementById(
+                    "settings"
+                )
+                .style.display =
+                    "block";
+
+            buildContactNames();
+
+        }
+    );
+
+
+document
+    .getElementById(
+        "closeSettings"
+    )
+    .addEventListener(
+        "click",
+        function() {
+
+            loadSettings();
+
+            document
+                .getElementById(
+                    "settings"
+                )
+                .style.display =
+                    "none";
+
+        }
+    );
+
+
+document
+    .getElementById(
+        "startButton"
+    )
+    .addEventListener(
+        "click",
+        function() {
+
+            startSession();
+
+        }
+    );
+
+
+document
+    .getElementById(
+        "stopButton"
+    )
+    .addEventListener(
+        "click",
+        function() {
+
+            stopSession();
+
+        }
+    );
+
+
+document
+    .getElementById(
+        "enterButton"
+    )
+    .addEventListener(
+        "click",
+        function() {
+
+            document
+                .getElementById(
+                    "startOverlay"
+                )
+                .style.display =
+                    "none";
+
+        }
+    );
+
+
+/* ============================================================
+   INITIALIZATION
+   ============================================================ */
+
+loadSettings();
+
+</script>
+
+</body>
+</html>
